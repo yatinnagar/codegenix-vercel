@@ -5,6 +5,7 @@ const { stripHtml } = require("string-strip-html");
 const _ = require("lodash");
 const Category = require("../models/category");
 const Tag = require("../models/tag");
+const User = require("../models/user");
 const { errorHandler } = require("../helpers/dbErrorHandler");
 const fs = require("fs");
 const {smartTrim}=require('../helpers/blog');
@@ -264,7 +265,7 @@ exports.getPhoto=(req,res)=>{
   Blog.findOne({slug})
   .select('photo')
    .exec((err,blog)=>{
-    if(err ||!blog){
+    if(err){
       return res.status(400).json({
         error:errorHandler(err)
       })
@@ -279,7 +280,7 @@ exports.listRelated=(req,res)=>{
    const {_id,categories}=req.body.blog;
    Blog.find({_id:{$ne:_id},categories:{$in:categories}})
    .limit(limit)
-   .populate('postedBy','_id name profile')
+   .populate('postedBy','_id name username profile')
    .select('title slug excerpt hasphoto postedBy createdAt updatedAt')
    .exec((err,blogs)=>{
     if(err){
@@ -310,4 +311,30 @@ exports.listSearch=(req,res)=>{
     ).select('-photo -body');
   }
 
+}
+
+exports.listByUser=(req,res)=>{
+    User.findOne({username:req.params.username})
+    .exec((err,user)=>{
+      if(err){
+        return res.status(400).json({
+          error:errorHandler(err)
+        })
+      }
+
+      let userId=user._id;
+      Blog.find({postedBy:userId})
+      .populate('categories','_id name slug')
+      .populate('tags','_id name slug')
+      .populate('postedBy','_id name username')
+      .select('_id title slug postedBy createdAt updatedAt')
+      .exec((err,data)=>{
+        if(err){
+          return res.status(400).json({
+            error:errorHandler(err)
+          })
+        }
+        res.json(data);
+      })
+    })
 }

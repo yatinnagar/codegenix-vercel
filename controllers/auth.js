@@ -1,7 +1,11 @@
 const User=require('../models/user');
 const shortId=require('shortid')
 const jsonwebtoken=require('jsonwebtoken');
+const { errorHandler } = require("../helpers/dbErrorHandler");
+const Blog = require("../models/blog");
+
 // const expressjwt = require("express-jwt");
+
 const { expressjwt: expressJwt } = require('express-jwt');
 
 
@@ -53,8 +57,8 @@ exports.login=(req,res)=>{
             })
          }
    
-const token=jsonwebtoken.sign({_id:user._id},process.env.SECRET_KEY,{expiresIn:'10d'})
-         res.cookie('token',token,{expiresIn:'10d'})
+const token=jsonwebtoken.sign({_id:user._id},process.env.SECRET_KEY,{expiresIn:'1m'})
+         res.cookie('token',token,{expiresIn:'1m'})
          const {_id,username,name,email,role}=user;
          return res.json({
              token,user:{_id,username,name,email,role}
@@ -112,5 +116,24 @@ exports.adminMiddleware=(req,res,next)=>{
         }
         req.profile=user;
         next();
+    })
+}
+
+exports.canUpdateDeleteBlog=(req,res,next)=>{
+    const slug=req.params.slug.toLowerCase()
+    Blog.findOne({slug}).exec((err,data)=>{
+        if(err){
+            return res.status(400).json({
+                error:errorHandler(err)
+              })
+        }
+        let authorizedUser=data.postedBy._id.toString()===req.profile._id.toString();
+        if(!authorizedUser){
+            return res.status(400).json({
+                error:'You are not authorized'
+              })
+        }
+        next();
+
     })
 }
