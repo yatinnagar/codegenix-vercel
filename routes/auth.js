@@ -1,15 +1,17 @@
 const express=require('express');
 const router=express.Router();
-const {signup,login, logout,requireSignin}= require('../controllers/auth')
+const {signup,login, logout,requireSignin,preSignup,googleLogin}= require('../controllers/auth')
 
 //validators
 const {runValidation}=require('../validators/index')
 const {userSignupValidator,userLoginValidator}=require('../validators/auth')
 
-router.post('/signup',userSignupValidator,runValidation,signup);
+router.post('/pre-signup',userSignupValidator,runValidation,preSignup);
+router.post('/signup',signup);
 router.post('/login',userLoginValidator,runValidation,login);
 router.get('/logout',logout)
-
+//google login
+router.post('/google-login',googleLogin);
 
 //test
 // router.get('/secret',requireSignin,(req,res)=>{
